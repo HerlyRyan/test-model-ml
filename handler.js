@@ -13,9 +13,18 @@ async function loadModel() {
   try {
     console.log("Loading model...");
     const modelPath = path.join(__dirname, "model/model.json");
+    const weighPath = path.join(__dirname, "model/group1-shard1of1.bin");
     const modelData = await readFileAsync(modelPath);
+    const weightData = await readFileAsync(weighPath);
+    console.log(modelData);
     console.log("Model data loaded successfully.");
-    model = await tf.loadLayersModel(tf.io.fromMemory(modelData));
+    model = await tf.loadLayersModel(
+      tf.io.fromMemory({
+        modelTopology: modelData,
+        weightData: weightData,
+      })
+    );
+
     console.log("Model loaded successfully");
   } catch (error) {
     console.error("Error loading model:", error);
@@ -31,14 +40,14 @@ async function getRecommendations(userId) {
 
     // Retrieve user's rated products from the database
     const result = await connection.query(
-      "SELECT product_id, rating FROM ratings WHERE user_id = ?",
+      "SELECT product_id, rate FROM review WHERE user_id = ?",
       [userId]
     );
 
-    const userRatings = result[0] || []; // Gunakan array kosong jika result[0] adalah undefined
+    const userRatings = result[0] || [];
 
     if (userRatings.length === 0) {
-      return { error: "User has no ratings." };
+      return { error: "User has no review" };
     }
 
     // Extract product IDs and ratings
@@ -49,7 +58,9 @@ async function getRecommendations(userId) {
     );
 
     // Predict ratings for all products
-    const allProductsResult = await connection.query("SELECT id FROM products");
+    const allProductsResult = await connection.query(
+      "SELECT product_id FROM products"
+    );
     const allProductIds = (allProductsResult[0] || []).map(({ id }) => id); // Gunakan array kosong jika allProductsResult[0] adalah undefined
 
     if (allProductIds.length === 0) {
@@ -115,23 +126,9 @@ function setupRoutes(app) {
     const result = await getRecommendations(userId);
     res.json(result);
   });
-
-  // Endpoint lainnya untuk CRUD operasi
-  // ...
-
-  // Endpoint untuk mendapatkan semua produk
-  app.get("/products", async (req, res) => {
-    try {
-      const results = await connection.query("SELECT * FROM products");
-      console.log("Query results:", results);
-      
-      const products = results[0]; // Mengambil hasil dari properti 'results'
-      res.json({ products });
-    } catch (error) {
-      console.error("Error getting products:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-    }
-  });
 }
+
+// Endpoint lainnya untuk CRUD operasi
+// ...
 
 module.exports = { setupRoutes };

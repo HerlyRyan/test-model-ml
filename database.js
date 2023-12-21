@@ -1,10 +1,10 @@
 const mysql = require('mysql');
 
 const connection = mysql.createConnection({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'test_ml',
+  host: '34.101.69.28', // IP external Cloud SQL
+  user: 'root', // Ganti dengan nama pengguna database
+  password: 'admin', // Ganti dengan kata sandi database
+  database: 'db_beternakapp', // Ganti dengan nama database
 });
 
 function setupDatabase() {
